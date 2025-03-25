@@ -23,7 +23,7 @@ def load_data(df):
     df.to_csv('transformed_data.csv', index=False)
     print("Data loaded successfully!")
 
-schedulecustom = Interval(timedelta(hours=1))
+schedulecustom = Interval(timedelta(minutes=1))
 
 @Flow
 def myflow():
