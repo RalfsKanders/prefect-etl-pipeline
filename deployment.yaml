@@ -1,5 +1,0 @@
-deployments:
-  - name: "etl-pipeline"
-    entrypoint: "etl_pipeline.py:etl_pipeline"
-    schedule:
-      interval: "0 9 * * *" 

@@ -1,26 +1,53 @@
-from prefect import flow, task
 import pandas as pd
 import requests
-import sqlite3
+from prefect import task, Flow
+from prefect.schedules import Interval
+from datetime import timedelta
 
-def extract():
-    url = "https://raw.githubusercontent.com/mwaskom/seaborn-data/master/tips.csv"
-    data = pd.read_csv(url)
+@task
+def extract_data():
+    url = 'https://jsonplaceholder.typicode.com/posts'
+    response = requests.get(url)
+    data = response.json()
     return data
 
-def transform(data):
-    data["total_bill"] = data["total_bill"] * 1.1  # Apply 10% tax
-    return data
+@task
+def transform_data(data):
+    df = pd.DataFrame(data)
+    df['title'] = df['title'].str.upper()
+    return df
 
-def load(data):
-    conn = sqlite3.connect("etl_data.db")
-    data.to_sql("tips", conn, if_exists="replace", index=False)
-    conn.close()
 
-def etl_pipeline():
-    data = extract()
-    transformed_data = transform(data)
-    load(transformed_data)
+@task
+def load_data(df):
+    df.to_csv('transformed_data.csv', index=False)
+    print("Data loaded successfully!")
+
+schedulecustom = Interval(timedelta(hours=1))
+
+@Flow
+def myflow():
+    raw_data = extract_data()
+    transformed_data = transform_data(raw_data)
+    load_data(transformed_data)
+
+def create_deployment():
+
+    try:
+        print("Building deployment...")
+        myflow.deploy(
+            name="etl_pipeline",
+            schedule=schedulecustom,
+            work_pool_name = "my_work_pool")
+        print("Applying deployment...")
+        deployment.apply()
+        print("Deployment successfully applied!")
+    except:
+        print(f"Error during deployment process")
+
+
 
 if __name__ == "__main__":
-    etl_pipeline()
+    create_deployment()
+    #myflow.serve (name="ETL Pipeline", schedules=[schedulecustom])
+
